@@ -1,0 +1,8 @@
+**
+!dist/**
+!media/**
+!package.json
+!language-configuration.json
+!machine.tmLanguage.json
+!LICENSE
+!README.md
