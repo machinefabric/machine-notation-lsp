@@ -1,0 +1,8 @@
+{
+    "name": "machine-notation-lsp-client",
+    "private": true,
+    "version": "0.1.0",
+    "dependencies": {
+        "vscode-languageclient": "^9.0.1"
+    }
+}
