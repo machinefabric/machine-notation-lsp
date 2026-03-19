@@ -1,7 +1,7 @@
 {
-    "name": "machine-notation-lsp",
-    "displayName": "Machine Notation",
-    "description": "VS Code extension for .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
+    "name": "capdag-machine-notation-lsp",
+    "displayName": "CAPDAG Machine Notation",
+    "description": "VS Code extension for CAPDAG .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
     "author": "Bahram Shamshiri",
     "license": "MIT",
     "version": "0.1.0",
@@ -27,14 +27,14 @@
         "mermaid"
     ],
     "activationEvents": [
-        "onLanguage:machine"
+        "onLanguage:capdag-machine"
     ],
     "main": "./dist/extension.js",
     "contributes": {
         "commands": [
             {
-                "command": "machine.showGraph",
-                "title": "Machine: Show Graph",
+                "command": "machine.showFabric",
+                "title": "Machine: Show Fabric",
                 "icon": "$(graph)",
                 "enableCommandUris": true
             }
@@ -42,28 +42,28 @@
         "menus": {
             "editor/title": [
                 {
-                    "command": "machine.showGraph",
-                    "when": "editorLangId == machine",
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine",
                     "group": "navigation"
                 }
             ],
             "editor/context": [
                 {
-                    "command": "machine.showGraph",
-                    "when": "editorLangId == machine",
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine",
                     "group": "machine@1"
                 }
             ],
             "commandPalette": [
                 {
-                    "command": "machine.showGraph",
-                    "when": "editorLangId == machine"
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine"
                 }
             ]
         },
         "configuration": {
             "type": "object",
-            "title": "Machine Notation",
+            "title": "CAPDAG Machine",
             "properties": {
                 "machine.registryUrl": {
                     "type": "string",
@@ -79,21 +79,21 @@
         },
         "grammars": [
             {
-                "language": "machine",
+                "language": "capdag-machine",
                 "scopeName": "source.machine",
                 "path": "./machine.tmLanguage.json"
             }
         ],
         "languages": [
             {
-                "id": "machine",
+                "id": "capdag-machine",
                 "extensions": [
                     ".machine"
                 ],
                 "configuration": "./language-configuration.json",
                 "aliases": [
-                    "Machine Notation",
-                    "machine"
+                    "CAPDAG Machine",
+                    "capdag-machine"
                 ]
             }
         ]

@@ -64,10 +64,10 @@ function createClientOptions(
 	const config = Workspace.getConfiguration('machine');
 	return {
 		documentSelector: folder
-			? [{ scheme: 'file', language: 'machine', pattern: `${folder.uri.fsPath}/**/*.machine` }]
+			? [{ scheme: 'file', language: 'capdag-machine', pattern: `${folder.uri.fsPath}/**/*.machine` }]
 			: [
-					{ scheme: 'untitled', language: 'machine' },
-					{ scheme: 'untitled', language: 'machine', pattern: '**/*.machine' },
+					{ scheme: 'untitled', language: 'capdag-machine' },
+					{ scheme: 'untitled', language: 'capdag-machine', pattern: '**/*.machine' },
 			  ],
 		diagnosticCollectionName: 'machine-notation-lsp',
 		workspaceFolder: folder,
@@ -118,9 +118,9 @@ export function activate(context: ExtensionContext) {
 	const serverModule = context.asAbsolutePath(path.join('dist', 'server', 'server.js'));
 	const outputChannel: OutputChannel = Window.createOutputChannel('Machine Notation LSP');
 
-	// Register the showGraph command — opens graph panel beside the editor
+	// Register the showFabric command — opens graph panel beside the editor
 	context.subscriptions.push(
-		commands.registerCommand('machine.showGraph', () => {
+		commands.registerCommand('machine.showFabric', () => {
 			GraphViewProvider.createOrShow(context.extensionUri);
 			// If we already have graph data buffered, send it immediately
 			if (latestGraphData) {
@@ -136,7 +136,7 @@ export function activate(context: ExtensionContext) {
 	);
 
 	function didOpenTextDocument(document: TextDocument): void {
-		if (document.languageId !== 'machine' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
+		if (document.languageId !== 'capdag-machine' || (document.uri.scheme !== 'file' && document.uri.scheme !== 'untitled')) {
 			return;
 		}
 
