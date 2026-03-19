@@ -1,0 +1,124 @@
+{
+    "name": "capdag-machine-notation-lsp",
+    "displayName": "CAPDAG Machine Notation",
+    "description": "VS Code extension for CAPDAG .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
+    "author": "Bahram Shamshiri",
+    "license": "MIT",
+	"version": "{{ project.version }}",
+    "publisher": "bahramjoharshamshiri",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/machinefabric/machine-notation-lsp"
+    },
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Visualization"
+    ],
+    "keywords": [
+        "machine",
+        "capdag",
+        "cap",
+        "urn",
+        "dag",
+        "mermaid"
+    ],
+    "activationEvents": [
+        "onLanguage:capdag-machine"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "machine.showFabric",
+                "title": "Machine: Show Fabric",
+                "icon": "$(graph)",
+                "enableCommandUris": true
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine",
+                    "group": "navigation"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine",
+                    "group": "machine@1"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "machine.showFabric",
+                    "when": "editorLangId == capdag-machine"
+                }
+            ]
+        },
+        "configuration": {
+            "type": "object",
+            "title": "CAPDAG Machine",
+            "properties": {
+                "machine.registryUrl": {
+                    "type": "string",
+                    "default": "https://capdag.com",
+                    "description": "Base URL for the cap/media registry"
+                },
+                "machine.registryCacheTtl": {
+                    "type": "number",
+                    "default": 300,
+                    "description": "Registry cache TTL in seconds"
+                }
+            }
+        },
+        "grammars": [
+            {
+                "language": "capdag-machine",
+                "scopeName": "source.machine",
+                "path": "./machine.tmLanguage.json"
+            }
+        ],
+        "languages": [
+            {
+                "id": "capdag-machine",
+                "extensions": [
+                    ".machine"
+                ],
+                "configuration": "./language-configuration.json",
+                "aliases": [
+                    "CAPDAG Machine",
+                    "capdag-machine"
+                ]
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "cross-env BUILD_MODE=production webpack",
+        "webpack": "webpack",
+        "watch": "cross-env BUILD_MODE=development webpack --watch",
+        "lint": "eslint",
+        "postinstall": "cd client && npm install && cd ../server && npm install",
+        "install-all": "npm install && npm run postinstall && npm run webpack",
+        "dev": "npm run watch"
+    },
+    "devDependencies": {
+        "@types/node": "^20",
+        "@types/vscode": "^1.85.0",
+        "copy-webpack-plugin": "^12.0.2",
+        "cross-env": "^7.0.3",
+        "ts-loader": "^9.5.2",
+        "typescript": "^5.7.3",
+        "webpack": "^5.98.0",
+        "webpack-cli": "^6.0.1"
+    },
+    "dependencies": {
+        "capdag": "^{{ projects.capdag_js.version }}",
+        "vscode-uri": "^3.1.0"
+    }
+}
