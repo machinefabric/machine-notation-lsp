@@ -1,4 +1,3 @@
-import * as path from 'path';
 import * as fs from 'fs';
 import {
 	Uri,
@@ -23,19 +22,15 @@ export class GraphViewProvider {
 	}
 
 	public static createOrShow(extensionUri: Uri) {
-		const column = window.activeTextEditor
-			? window.activeTextEditor.viewColumn
-			: undefined;
-
 		if (GraphViewProvider.currentPanel) {
-			GraphViewProvider.currentPanel._panel.reveal(column);
+			GraphViewProvider.currentPanel._panel.reveal(ViewColumn.Beside);
 			return;
 		}
 
 		const panel = window.createWebviewPanel(
 			'machineGraph',
 			'Machine Graph',
-			column || ViewColumn.Beside,
+			ViewColumn.Beside,
 			{
 				enableScripts: true,
 				retainContextWhenHidden: true,

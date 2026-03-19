@@ -35,10 +35,18 @@
             {
                 "command": "machine.showGraph",
                 "title": "Machine: Show Graph",
+                "icon": "$(graph)",
                 "enableCommandUris": true
             }
         ],
         "menus": {
+            "editor/title": [
+                {
+                    "command": "machine.showGraph",
+                    "when": "editorLangId == machine",
+                    "group": "navigation"
+                }
+            ],
             "editor/context": [
                 {
                     "command": "machine.showGraph",

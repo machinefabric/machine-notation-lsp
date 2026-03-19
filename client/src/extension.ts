@@ -21,6 +21,9 @@ import { GraphViewProvider } from './graphViewProvider';
 let defaultClient: LanguageClient;
 const clients = new Map<string, LanguageClient>();
 
+// Buffer the latest graph data so it's available when the panel opens
+let latestGraphData: { uri: string; mermaid: string | null; error?: string } | null = null;
+
 let _sortedWorkspaceFolders: string[] | undefined;
 function sortedWorkspaceFolders(): string[] {
 	if (_sortedWorkspaceFolders === void 0) {
@@ -76,14 +79,59 @@ function createClientOptions(
 	};
 }
 
+function handleGraphData(params: { uri: string; mermaid: string | null; error?: string }) {
+	latestGraphData = params;
+	if (GraphViewProvider.currentPanel) {
+		if (params.mermaid) {
+			GraphViewProvider.currentPanel.updateGraph(params.mermaid);
+		} else if (params.error) {
+			GraphViewProvider.currentPanel.showError(params.error);
+		}
+	}
+}
+
+async function startClient(
+	serverModule: string,
+	outputChannel: OutputChannel,
+	folder?: WorkspaceFolder
+): Promise<LanguageClient> {
+	const serverOptions = {
+		run: { module: serverModule, transport: TransportKind.ipc },
+		debug: { module: serverModule, transport: TransportKind.ipc },
+	};
+	const client = new LanguageClient(
+		'machine-notation-lsp',
+		'Machine Notation Language Server',
+		serverOptions,
+		createClientOptions(outputChannel, folder)
+	);
+
+	// In v9, start() returns a Promise. We must await it before registering notification handlers.
+	await client.start();
+
+	client.onNotification('machine/graphData', handleGraphData);
+
+	return client;
+}
+
 export function activate(context: ExtensionContext) {
-	const module = context.asAbsolutePath(path.join('dist', 'server', 'server.js'));
+	const serverModule = context.asAbsolutePath(path.join('dist', 'server', 'server.js'));
 	const outputChannel: OutputChannel = Window.createOutputChannel('Machine Notation LSP');
 
-	// Register the showGraph command
+	// Register the showGraph command — opens graph panel beside the editor
 	context.subscriptions.push(
 		commands.registerCommand('machine.showGraph', () => {
 			GraphViewProvider.createOrShow(context.extensionUri);
+			// If we already have graph data buffered, send it immediately
+			if (latestGraphData) {
+				if (GraphViewProvider.currentPanel) {
+					if (latestGraphData.mermaid) {
+						GraphViewProvider.currentPanel.updateGraph(latestGraphData.mermaid);
+					} else if (latestGraphData.error) {
+						GraphViewProvider.currentPanel.showError(latestGraphData.error);
+					}
+				}
+			}
 		})
 	);
 
@@ -96,18 +144,9 @@ export function activate(context: ExtensionContext) {
 
 		// Untitled files go to a default client
 		if (uri.scheme === 'untitled' && !defaultClient) {
-			const serverOptions = {
-				run: { module, transport: TransportKind.ipc },
-				debug: { module, transport: TransportKind.ipc },
-			};
-			defaultClient = new LanguageClient(
-				'machine-notation-lsp',
-				'Machine Notation Language Server',
-				serverOptions,
-				createClientOptions(outputChannel)
-			);
-			defaultClient.start();
-			setupClientHandlers(defaultClient, context);
+			startClient(serverModule, outputChannel).then((client) => {
+				defaultClient = client;
+			});
 			return;
 		}
 
@@ -117,19 +156,12 @@ export function activate(context: ExtensionContext) {
 		folder = getOuterMostWorkspaceFolder(folder);
 
 		if (!clients.has(folder.uri.toString())) {
-			const serverOptions = {
-				run: { module, transport: TransportKind.ipc },
-				debug: { module, transport: TransportKind.ipc },
-			};
-			const client = new LanguageClient(
-				'machine-notation-lsp',
-				'Machine Notation Language Server',
-				serverOptions,
-				createClientOptions(outputChannel, folder)
-			);
-			client.start();
-			setupClientHandlers(client, context);
-			clients.set(folder.uri.toString(), client);
+			const folderKey = folder.uri.toString();
+			// Mark as in-progress to avoid double-starts
+			clients.set(folderKey, null as unknown as LanguageClient);
+			startClient(serverModule, outputChannel, folder).then((client) => {
+				clients.set(folderKey, client);
+			});
 		}
 	}
 
@@ -152,22 +184,9 @@ export function deactivate(): Thenable<void> {
 		promises.push(defaultClient.stop());
 	}
 	for (const client of clients.values()) {
-		promises.push(client.stop());
+		if (client) {
+			promises.push(client.stop());
+		}
 	}
 	return Promise.all(promises).then(() => undefined);
-}
-
-function setupClientHandlers(client: LanguageClient, _context: ExtensionContext) {
-	client.onNotification(
-		'machine/graphData',
-		(params: { uri: string; mermaid: string | null; error?: string }) => {
-			if (GraphViewProvider.currentPanel) {
-				if (params.mermaid) {
-					GraphViewProvider.currentPanel.updateGraph(params.mermaid);
-				} else if (params.error) {
-					GraphViewProvider.currentPanel.showError(params.error);
-				}
-			}
-		}
-	);
 }
