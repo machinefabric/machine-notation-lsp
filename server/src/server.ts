@@ -20,6 +20,7 @@ import { RegistryClient } from './registryClient';
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 const documentStates = new Map<string, DocumentState>();
+const lastGoodStates = new Map<string, DocumentState>();
 
 let registryClient: RegistryClient;
 
@@ -29,6 +30,9 @@ connection.onInitialize((params: InitializeParams) => {
 		config.registryUrl || 'https://capdag.com',
 		config.registryCacheTtl || 300
 	);
+
+	// Warm registry cache eagerly so first completion is fast
+	registryClient.fetchCapabilities().catch(() => {});
 
 	return {
 		capabilities: {
@@ -49,15 +53,21 @@ function handleDocumentChange(document: TextDocument): void {
 	const state = new DocumentState(document.uri, document.getText());
 	documentStates.set(document.uri, state);
 
+	// Preserve last successful parse for completions during error states
+	if (state.machine) {
+		lastGoodStates.set(document.uri, state);
+	}
+
 	const diagnostics: Diagnostic[] = getDiagnostics(state);
 	connection.sendDiagnostics({ uri: document.uri, diagnostics });
 
 	// Send graph data to client for Mermaid rendering
-	if (state.machine) {
-		const mermaidCode = state.machine.toMermaid();
+	// Use last good state when current parse fails so the graph stays visible
+	const graphState = state.machine ? state : lastGoodStates.get(document.uri);
+	if (graphState?.machine) {
 		connection.sendNotification('machine/graphData', {
 			uri: document.uri,
-			mermaid: mermaidCode,
+			mermaid: graphState.machine.toMermaid(),
 		});
 	} else {
 		connection.sendNotification('machine/graphData', {
@@ -94,7 +104,10 @@ connection.onCompletion(async (params): Promise<CompletionItem[]> => {
 	const state = documentStates.get(document.uri);
 	if (!state) return [];
 
-	return getCompletions(state, params.position, document.getText(), registryClient);
+	// Use last good state for alias/node data when current parse failed
+	const stateForCompletions = state.machine ? state : (lastGoodStates.get(document.uri) || state);
+
+	return getCompletions(stateForCompletions, params.position, document.getText(), registryClient);
 });
 
 documents.onDidOpen((event) => {
@@ -107,6 +120,7 @@ documents.onDidChangeContent((event) => {
 
 documents.onDidClose((event) => {
 	documentStates.delete(event.document.uri);
+	lastGoodStates.delete(event.document.uri);
 });
 
 documents.listen(connection);

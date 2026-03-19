@@ -117,19 +117,7 @@ async function getHeaderStartCompletions(
 ): Promise<CompletionItem[]> {
 	const items: CompletionItem[] = [];
 
-	// Suggest op= values as alias names from registry
-	const ops = await registry.getKnownOps();
-	for (const op of ops) {
-		if (prefix && !op.startsWith(prefix)) continue;
-		items.push({
-			label: op,
-			kind: CompletionItemKind.Function,
-			detail: `Alias for op=${op}`,
-			insertTextFormat: InsertTextFormat.PlainText,
-		});
-	}
-
-	// Also suggest existing node names for wirings
+	// Suggest existing node names for starting a wiring
 	if (state.nodeMedia) {
 		for (const [nodeName] of state.nodeMedia) {
 			if (prefix && !nodeName.startsWith(prefix)) continue;
@@ -137,8 +125,40 @@ async function getHeaderStartCompletions(
 				label: nodeName,
 				kind: CompletionItemKind.Variable,
 				detail: `Node: ${state.nodeMedia.get(nodeName)?.toString() || 'unknown'}`,
+				sortText: `0_${nodeName}`, // Sort nodes first
 			});
 		}
+	}
+
+	// Suggest existing cap aliases for starting a wiring
+	if (state.aliasMap) {
+		for (const [alias, entry] of state.aliasMap) {
+			if (prefix && !alias.startsWith(prefix)) continue;
+			// Skip if already listed as a node name
+			if (state.nodeMedia?.has(alias)) continue;
+			const opTag = entry.capUrn?.getTag?.('op');
+			items.push({
+				label: alias,
+				kind: CompletionItemKind.Function,
+				detail: `Cap: ${opTag || entry.capUrn?.toString() || alias}`,
+				sortText: `1_${alias}`, // Sort aliases after nodes
+			});
+		}
+	}
+
+	// Suggest op= values as alias names from registry (for new headers)
+	const ops = await registry.getKnownOps();
+	for (const op of ops) {
+		if (prefix && !op.startsWith(prefix)) continue;
+		// Skip if already exists as an alias in this document
+		if (state.aliasMap?.has(op)) continue;
+		items.push({
+			label: op,
+			kind: CompletionItemKind.Function,
+			detail: `New header: op=${op}`,
+			sortText: `2_${op}`, // Sort registry suggestions last
+			insertTextFormat: InsertTextFormat.PlainText,
+		});
 	}
 
 	return items;
