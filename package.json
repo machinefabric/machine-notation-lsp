@@ -76,10 +76,6 @@
       ]
     }
   },
-  "dependencies": {
-    "capdag": "file:../capdag-js",
-    "vscode-uri": "^3.1.0"
-  },
   "description": "VS Code extension for .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
   "devDependencies": {
     "@types/node": "^20",
@@ -120,5 +116,5 @@
     "watch": "cross-env BUILD_MODE=development webpack --watch",
     "webpack": "webpack"
   },
-  "version": "0.14.11216"
+  "version": "0.15.11342"
 }
