@@ -103,10 +103,10 @@
     "dag",
     "mermaid"
   ],
-  "license": "MITs",
+  "license": "MIT",
   "main": "./dist/extension.js",
   "name": "capdag-machine-notation-lsp",
-  "version": "0.17.11356",
+  "version": "0.18.11407",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
