@@ -1,0 +1,124 @@
+{
+  "activationEvents": [
+    "onLanguage:machine"
+  ],
+  "author": "Bahram Shamshiri",
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Visualization"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "machine.showGraph",
+        "enableCommandUris": true,
+        "icon": "$(graph)",
+        "title": "Machine: Show Graph"
+      }
+    ],
+    "configuration": {
+      "properties": {
+        "machine.registryCacheTtl": {
+          "default": 300,
+          "description": "Registry cache TTL in seconds",
+          "type": "number"
+        },
+        "machine.registryUrl": {
+          "default": "https://capdag.com",
+          "description": "Base URL for the cap/media registry",
+          "type": "string"
+        }
+      },
+      "title": "Machine Notation",
+      "type": "object"
+    },
+    "grammars": [
+      {
+        "language": "machine",
+        "path": "./machine.tmLanguage.json",
+        "scopeName": "source.machine"
+      }
+    ],
+    "languages": [
+      {
+        "aliases": [
+          "Machine Notation",
+          "machine"
+        ],
+        "configuration": "./language-configuration.json",
+        "extensions": [
+          ".machine"
+        ],
+        "id": "machine"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "machine.showGraph",
+          "when": "editorLangId == machine"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "machine.showGraph",
+          "group": "machine@1",
+          "when": "editorLangId == machine"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "machine.showGraph",
+          "group": "navigation",
+          "when": "editorLangId == machine"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "capdag": "file:../capdag-js",
+    "vscode-uri": "^3.1.0"
+  },
+  "description": "VS Code extension for .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/vscode": "^1.85.0",
+    "copy-webpack-plugin": "^12.0.2",
+    "cross-env": "^7.0.3",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
+  },
+  "displayName": "Machine Notation",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "keywords": [
+    "machine",
+    "capdag",
+    "cap",
+    "urn",
+    "dag",
+    "mermaid"
+  ],
+  "license": "MIT",
+  "main": "./dist/extension.js",
+  "name": "machine-notation-lsp",
+  "publisher": "bahramjoharshamshiri",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/machinefabric/machine-notation-lsp"
+  },
+  "scripts": {
+    "dev": "npm run watch",
+    "install-all": "npm install && npm run postinstall && npm run webpack",
+    "lint": "eslint",
+    "postinstall": "cd client && npm install && cd ../server && npm install",
+    "vscode:prepublish": "cross-env BUILD_MODE=production webpack",
+    "watch": "cross-env BUILD_MODE=development webpack --watch",
+    "webpack": "webpack"
+  },
+  "version": "0.14.11216"
+}
