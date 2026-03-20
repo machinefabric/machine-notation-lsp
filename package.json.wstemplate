@@ -29,6 +29,7 @@
     "activationEvents": [
         "onLanguage:capdag-machine"
     ],
+    "icon": "icon.png",
     "main": "./dist/extension.js",
     "contributes": {
         "commands": [
@@ -100,6 +101,7 @@
     },
     "scripts": {
         "vscode:prepublish": "cross-env BUILD_MODE=production webpack",
+        "package": "vsce package --out dist/",
         "webpack": "webpack",
         "watch": "cross-env BUILD_MODE=development webpack --watch",
         "lint": "eslint",
