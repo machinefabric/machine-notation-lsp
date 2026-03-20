@@ -106,6 +106,7 @@
   "license": "MIT",
   "main": "./dist/extension.js",
   "name": "capdag-machine-notation-lsp",
+  "version": "{{ project.version }}",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
@@ -120,6 +121,5 @@
 	"package": "vsce package --out dist/",
     "watch": "cross-env BUILD_MODE=development webpack --watch",
     "webpack": "webpack"
-  },
-  "version": "{{ project.version }}"
+  }
 }
