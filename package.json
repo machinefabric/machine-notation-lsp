@@ -1,6 +1,6 @@
 {
   "activationEvents": [
-    "onLanguage:machine"
+    "onLanguage:capdag-machine"
   ],
   "author": "Bahram Shamshiri",
   "categories": [
@@ -11,10 +11,10 @@
   "contributes": {
     "commands": [
       {
-        "command": "machine.showGraph",
+        "command": "machine.showFabric",
         "enableCommandUris": true,
         "icon": "$(graph)",
-        "title": "Machine: Show Graph"
+        "title": "Machine: Show Fabric"
       }
     ],
     "configuration": {
@@ -30,12 +30,12 @@
           "type": "string"
         }
       },
-      "title": "Machine Notation",
+      "title": "CAPDAG Machine",
       "type": "object"
     },
     "grammars": [
       {
-        "language": "machine",
+        "language": "capdag-machine",
         "path": "./machine.tmLanguage.json",
         "scopeName": "source.machine"
       }
@@ -43,54 +43,58 @@
     "languages": [
       {
         "aliases": [
-          "Machine Notation",
-          "machine"
+          "CAPDAG Machine",
+          "capdag-machine"
         ],
         "configuration": "./language-configuration.json",
         "extensions": [
           ".machine"
         ],
-        "id": "machine"
+        "id": "capdag-machine"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "machine.showGraph",
-          "when": "editorLangId == machine"
+          "command": "machine.showFabric",
+          "when": "editorLangId == capdag-machine"
         }
       ],
       "editor/context": [
         {
-          "command": "machine.showGraph",
+          "command": "machine.showFabric",
           "group": "machine@1",
-          "when": "editorLangId == machine"
+          "when": "editorLangId == capdag-machine"
         }
       ],
       "editor/title": [
         {
-          "command": "machine.showGraph",
+          "command": "machine.showFabric",
           "group": "navigation",
-          "when": "editorLangId == machine"
+          "when": "editorLangId == capdag-machine"
         }
       ]
     }
   },
-  "description": "VS Code extension for .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
+  "dependencies": {},
+  "description": "VS Code extension for CAPDAG .machine files — syntax highlighting, LSP diagnostics, registry-backed autocomplete, and live Mermaid graph visualization",
   "devDependencies": {
     "@types/node": "^20",
     "@types/vscode": "^1.85.0",
+    "capdag": "^0.94.24331",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "ts-loader": "^9.5.2",
     "typescript": "^5.7.3",
+    "vscode-uri": "^3.1.0",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
   },
-  "displayName": "Machine Notation",
+  "displayName": "CAPDAG Machine Notation",
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "icon.png",
   "keywords": [
     "machine",
     "capdag",
@@ -98,10 +102,11 @@
     "urn",
     "dag",
     "mermaid"
-  ],s
-  "license": "MIT",
+  ],
+  "license": "MITs",
   "main": "./dist/extension.js",
-  "name": "machine-notation-lsp",
+  "name": "capdag-machine-notation-lsp",
+  "version": "0.17.11356",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
@@ -112,9 +117,9 @@
     "install-all": "npm install && npm run postinstall && npm run webpack",
     "lint": "eslint",
     "postinstall": "cd client && npm install && cd ../server && npm install",
-    "vscode:prepublish": "cross-env BUILD_MODE=production webpack",
+	"vscode:prepublish": "cross-env BUILD_MODE=production webpack",
+	"package": "vsce package --out dist/",
     "watch": "cross-env BUILD_MODE=development webpack --watch",
     "webpack": "webpack"
-  },
-  "version": "0.15.11342"
+  }
 }
