@@ -94,6 +94,7 @@
   "engines": {
     "vscode": "^1.85.0"
   },
+  "icon": "icon.png",
   "keywords": [
     "machine",
     "capdag",
@@ -119,5 +120,5 @@
     "watch": "cross-env BUILD_MODE=development webpack --watch",
     "webpack": "webpack"
   },
-  "version": "0.7.4515"
+  "version": "0.8.8741"
 }
