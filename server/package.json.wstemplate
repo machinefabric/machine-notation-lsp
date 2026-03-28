@@ -7,6 +7,6 @@
         "vscode-languageserver-textdocument": "^1.0.12"
     },
     "devDependencies": {
-        "capdag": "^0.96.25093"
+        "capdag": "^{{ projects.capdag_js.version }}"
     }
 }
