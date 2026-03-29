@@ -3,11 +3,10 @@ const CopyPlugin = require("copy-webpack-plugin");
 const webpack = require('webpack');
 
 const mode = process.env.BUILD_MODE || 'production';
-const isDevelopment = mode === 'development';
 
 /** @type {import('webpack').Configuration} */
 const clientConfig = {
-  mode,
+  mode: "production",
   target: "node",
   entry: "./client/src/extension.ts",
   output: {
@@ -15,7 +14,10 @@ const clientConfig = {
     filename: "extension.js",
     libraryTarget: "commonjs2",
   },
-  devtool: isDevelopment ? 'source-map' : false,
+  devtool: "source-map",
+  optimization: {
+    minimize: false,
+  },
   externals: {
     vscode: "commonjs vscode"
   },
@@ -44,7 +46,7 @@ const clientConfig = {
 
 /** @type {import('webpack').Configuration} */
 const serverConfig = {
-  mode,
+  mode: "production",
   target: "node",
   entry: "./server/src/server.ts",
   output: {
@@ -52,7 +54,10 @@ const serverConfig = {
     filename: "server.js",
     libraryTarget: "commonjs2",
   },
-  devtool: isDevelopment ? 'source-map' : false,
+  devtool: "source-map",
+  optimization: {
+    minimize: false,
+  },
   externals: {
     vscode: "commonjs vscode"
   },
