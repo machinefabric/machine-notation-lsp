@@ -10,6 +10,10 @@ import { RegistryClient } from './registryClient';
 
 /**
  * Determine completion context from cursor position within the document text.
+ *
+ * Supports both bracketed `[...]` and line-based (no brackets) statement forms.
+ * For bracketed mode, finds the innermost unclosed `[`.
+ * For line-based mode, uses the start of the current line as the context boundary.
  */
 function getContext(text: string, position: Position): {
 	type: 'header_start' | 'cap_urn' | 'media_urn' | 'wiring_source' | 'wiring_target' | 'unknown';
@@ -19,7 +23,7 @@ function getContext(text: string, position: Position): {
 	const line = lines[position.line] || '';
 	const lineUpToCursor = line.substring(0, position.character);
 
-	// Find the innermost unclosed bracket
+	// Find the innermost unclosed bracket (bracketed mode)
 	let bracketDepth = 0;
 	let bracketStart = -1;
 	for (let i = lineUpToCursor.length - 1; i >= 0; i--) {
@@ -33,33 +37,38 @@ function getContext(text: string, position: Position): {
 		}
 	}
 
-	if (bracketStart === -1) {
-		// Not inside a bracket — check if cursor is right after [
-		if (lineUpToCursor.trimEnd().endsWith('[')) {
-			return { type: 'header_start', prefix: '' };
-		}
-		return { type: 'unknown', prefix: '' };
+	// Determine the context text: inside bracket (skip `[`), or the full line (line-based)
+	let inside: string;
+	if (bracketStart >= 0) {
+		inside = lineUpToCursor.substring(bracketStart + 1);
+	} else {
+		// Line-based mode: use the full line up to cursor
+		inside = lineUpToCursor;
 	}
 
-	const insideBracket = lineUpToCursor.substring(bracketStart + 1);
+	// Empty line — check if cursor is right after [ or at start of empty line
+	const trimmed = inside.trim();
+	if (trimmed === '') {
+		return { type: 'header_start', prefix: '' };
+	}
 
 	// Check if we're in a cap URN context (after "cap:")
-	if (/cap:/.test(insideBracket)) {
+	if (/cap:/.test(inside)) {
 		// Check if we're after in= or out= and expecting a media URN
-		const afterEquals = insideBracket.match(/(?:in|out)=([^;"\]]*?)$/);
+		const afterEquals = inside.match(/(?:in|out)=([^;"\]]*?)$/);
 		if (afterEquals) {
 			return { type: 'media_urn', prefix: afterEquals[1] };
 		}
-		const afterQuotedEquals = insideBracket.match(/(?:in|out)="([^"]*?)$/);
+		const afterQuotedEquals = inside.match(/(?:in|out)="([^"]*?)$/);
 		if (afterQuotedEquals) {
 			return { type: 'media_urn', prefix: afterQuotedEquals[1] };
 		}
-		return { type: 'cap_urn', prefix: insideBracket.trim() };
+		return { type: 'cap_urn', prefix: inside.trim() };
 	}
 
 	// Check if we're in a wiring context (has ->)
-	if (insideBracket.includes('->')) {
-		const parts = insideBracket.split('->');
+	if (inside.includes('->')) {
+		const parts = inside.split('->');
 		if (parts.length >= 3) {
 			// After second arrow — completing target
 			return { type: 'wiring_target', prefix: parts[parts.length - 1].trim() };
@@ -70,10 +79,8 @@ function getContext(text: string, position: Position): {
 		}
 	}
 
-	// At the start of a bracket — could be header or wiring source
-	const trimmed = insideBracket.trim();
-	if (trimmed === '' || /^[a-zA-Z_]/.test(trimmed)) {
-		// Could be starting a header alias or a wiring source
+	// At the start — could be header or wiring source
+	if (/^[a-zA-Z_]/.test(trimmed)) {
 		return { type: 'header_start', prefix: trimmed };
 	}
 
