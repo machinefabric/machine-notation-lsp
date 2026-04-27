@@ -7,6 +7,6 @@
         "vscode-languageserver-textdocument": "^1.0.12"
     },
     "devDependencies": {
-        "capdag": "^0.153.347"
+        "capdag": "^0.154.351"
     }
 }
