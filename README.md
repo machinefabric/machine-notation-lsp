@@ -13,9 +13,9 @@ VS Code extension for `.machine` files — the bracket-delimited DAG wiring nota
 ## .machine File Format
 
 ```
-[extract_metadata cap:in=media:pdf;op=extract_metadata;out="media:file-metadata;textable;record"]
-[extract_outline cap:in=media:pdf;op=extract_outline;out="media:document-outline;textable;record"]
-[generate_thumbnail cap:in=media:pdf;op=generate_thumbnail;out="media:image;png;thumbnail"]
+[extract_metadata cap:in=media:pdf;extract-metadata;out="media:file-metadata;textable;record"]
+[extract_outline cap:in=media:pdf;extract-outline;out="media:document-outline;textable;record"]
+[generate_thumbnail cap:in=media:pdf;generate-thumbnail;out="media:image;png;thumbnail"]
 
 [pdf_input -> extract_metadata -> metadata]
 [pdf_input -> extract_outline -> outline]
