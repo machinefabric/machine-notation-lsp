@@ -1,19 +1,19 @@
 // @ts-nocheck — capdag is a plain JS package without type declarations
 const capdag = require('capdag');
-const { CapRegistryClient, CapRegistryEntry, MediaRegistryEntry } = capdag;
+const { FabricRegistryClient, FabricRegistryEntry, MediaRegistryEntry } = capdag;
 
 /**
- * Thin wrapper around capdag's CapRegistryClient for LSP-specific use.
+ * Thin wrapper around capdag's FabricRegistryClient for LSP-specific use.
  *
- * Delegates all actual work to capdag-js CapRegistryClient.
+ * Delegates all actual work to capdag-js FabricRegistryClient.
  * Handles async errors gracefully for non-critical operations (completions, hover enrichment)
  * but still exposes them — no silent swallowing.
  */
 export class RegistryClient {
-	private _client: InstanceType<typeof CapRegistryClient>;
+	private _client: InstanceType<typeof FabricRegistryClient>;
 
 	constructor(baseUrl: string, cacheTtlSeconds: number) {
-		this._client = new CapRegistryClient(baseUrl, cacheTtlSeconds);
+		this._client = new FabricRegistryClient(baseUrl, cacheTtlSeconds);
 	}
 
 	async fetchCapabilities(): Promise<any[]> {
