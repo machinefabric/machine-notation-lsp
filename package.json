@@ -81,7 +81,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/vscode": "^1.85.0",
-    "capdag": "^0.178.444",
+    "capdag": "^0.179.447",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "ts-loader": "^9.5.2",
@@ -106,7 +106,7 @@
   "license": "MIT",
   "main": "./dist/extension.js",
   "name": "capdag-machine-notation-lsp",
-  "version": "0.62.258",
+  "version": "0.63.262",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
