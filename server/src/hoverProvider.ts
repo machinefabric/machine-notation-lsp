@@ -82,7 +82,7 @@ async function getNodeHover(token: TokenInfo, state: DocumentState, registry: Re
 	let markdown = `**${token.value}** (node)\n\n`;
 	markdown += `Type: \`${mediaUrn.toString()}\`\n`;
 
-	// Try to get media spec title from registry
+	// Try to get media def title from registry
 	const mediaEntry = await registry.lookupMediaByUrn(mediaUrn.toString());
 	if (mediaEntry) {
 		if (mediaEntry.title) markdown += `\n**${mediaEntry.title}**\n`;

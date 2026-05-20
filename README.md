@@ -6,7 +6,7 @@ VS Code extension for `.machine` files — the bracket-delimited DAG wiring nota
 
 - **Syntax highlighting** — brackets, cap URNs, media URNs, arrows, LOOP keyword, aliases
 - **Diagnostics** — parse errors, undefined aliases, duplicate aliases, invalid URNs with precise positions
-- **Hover info** — cap URN details, media spec types, registry-enriched metadata
+- **Hover info** — cap URN details, media def types, registry-enriched metadata
 - **Autocomplete** — registry-backed suggestions for cap URNs, media URNs, ops, node names, and aliases
 - **Live graph** — Mermaid flowchart that renders beside the editor and updates as you type
 
