@@ -4,7 +4,7 @@ VS Code extension for `.machine` files — the bracket-delimited DAG wiring nota
 
 ## Features
 
-- **Syntax highlighting** — brackets, cap URNs, media URNs, arrows, LOOP keyword, aliases
+- **Syntax highlighting** — brackets, cap URNs, media URNs, arrows, aliases
 - **Diagnostics** — parse errors, undefined aliases, duplicate aliases, invalid URNs with precise positions
 - **Hover info** — cap URN details, media def types, registry-enriched metadata
 - **Autocomplete** — registry-backed suggestions for cap URNs, media URNs, ops, node names, and aliases
@@ -22,7 +22,7 @@ VS Code extension for `.machine` files — the bracket-delimited DAG wiring nota
 [pdf_input -> generate_thumbnail -> thumbnail]
 ```
 
-Each statement is enclosed in brackets. **Headers** bind an alias to a cap URN. **Wirings** connect nodes through capabilities using `->` arrows. Fan-in uses parenthesized groups: `[(a, b) -> cap -> target]`. ForEach uses the LOOP keyword: `[items -> LOOP cap -> results]`.
+Each statement is enclosed in brackets. **Headers** bind an alias to a cap URN. **Wirings** connect nodes through capabilities using `->` arrows. Fan-in uses parenthesized groups: `[(a, b) -> cap -> target]`. Per-item mapping (ForEach) is derived automatically from capability cardinality by the engine.
 
 ## Commands
 

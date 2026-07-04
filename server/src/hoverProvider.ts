@@ -35,8 +35,6 @@ export async function getHoverInfo(
 			return getNodeHover(token, state, registry);
 		case 'capUrn':
 			return getCapUrnHover(token, state, registry);
-		case 'loop':
-			return getLoopHover(token);
 		default:
 			return null;
 	}
@@ -134,13 +132,6 @@ async function getCapUrnHover(token: TokenInfo, state: DocumentState, registry: 
 
 	return {
 		value: markdown,
-		range: peggyToRange(token.location),
-	};
-}
-
-function getLoopHover(token: TokenInfo): HoverResult {
-	return {
-		value: '**LOOP** — ForEach semantics\n\nApplies the capability to each item in the input list individually, collecting results into an output list.',
 		range: peggyToRange(token.location),
 	};
 }

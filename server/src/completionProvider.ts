@@ -74,7 +74,7 @@ function getContext(text: string, position: Position): {
 			return { type: 'wiring_target', prefix: parts[parts.length - 1].trim() };
 		}
 		if (parts.length === 2) {
-			// After first arrow — completing cap alias or LOOP + alias
+			// After first arrow — completing cap alias
 			return { type: 'wiring_target', prefix: parts[1].trim() };
 		}
 	}
@@ -241,15 +241,6 @@ function getWiringCompletions(
 				detail: `Cap: ${opTag || entry.capUrn.toString()}`,
 			});
 		}
-	}
-
-	// Suggest LOOP keyword
-	if (!prefix || 'LOOP'.startsWith(prefix)) {
-		items.push({
-			label: 'LOOP',
-			kind: CompletionItemKind.Keyword,
-			detail: 'ForEach semantics',
-		});
 	}
 
 	return items;

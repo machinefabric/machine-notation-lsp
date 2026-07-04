@@ -25,7 +25,6 @@ interface WiringStatement {
 	sources: string[];
 	capAlias: string;
 	target: string;
-	isLoop: boolean;
 	location: PeggyLocation;
 	sourceLocations: PeggyLocation[];
 	capAliasLocation: PeggyLocation;
@@ -35,7 +34,7 @@ interface WiringStatement {
 type ParsedStatement = HeaderStatement | WiringStatement;
 
 export interface TokenInfo {
-	type: 'alias' | 'capUrn' | 'node' | 'arrow' | 'loop' | 'bracket';
+	type: 'alias' | 'capUrn' | 'node' | 'arrow' | 'bracket';
 	value: string;
 	statement: ParsedStatement;
 	location: PeggyLocation;
@@ -136,14 +135,6 @@ export class DocumentState {
 			if (stmt.targetLocation && this._positionInRange(peggyLine, peggyCol, stmt.targetLocation)) {
 				return { type: 'node', value: stmt.target, statement: stmt, location: stmt.targetLocation };
 			}
-
-			// Check for LOOP keyword — it would be just before the cap alias
-			// Approximate: if cursor is on the word LOOP in the text
-			const lineText = this.text.split('\n')[line] || '';
-			const wordAtPos = this._getWordAt(lineText, character);
-			if (wordAtPos === 'LOOP' && stmt.isLoop) {
-				return { type: 'loop', value: 'LOOP', statement: stmt, location: stmt.location };
-			}
 		}
 
 		return null;
@@ -155,18 +146,5 @@ export class DocumentState {
 		if (line === start.line && col < start.column) return false;
 		if (line === end.line && col > end.column) return false;
 		return true;
-	}
-
-	private _getWordAt(lineText: string, character: number): string {
-		const wordRegex = /[a-zA-Z_][a-zA-Z0-9_-]*/g;
-		let match;
-		while ((match = wordRegex.exec(lineText)) !== null) {
-			const start = match.index;
-			const end = start + match[0].length;
-			if (character >= start && character < end) {
-				return match[0];
-			}
-		}
-		return '';
 	}
 }
