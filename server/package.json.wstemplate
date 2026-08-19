@@ -7,6 +7,6 @@
         "vscode-languageserver-textdocument": "^1.0.12"
     },
     "devDependencies": {
-        "capdag": "^{{ projects.capdag_js.latest_remote_version }}"
+        "capdag": {% if env.MFR_LOCAL_LIBS %}"file:{{ projects.capdag_js.path_from_here }}"{% else %}"^{{ projects.capdag_js.latest_remote_version }}"{% endif %}
     }
 }
