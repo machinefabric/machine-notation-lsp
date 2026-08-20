@@ -1,6 +1,8 @@
-# CAPDAG Machine Notation
+# CapDAG machine notation extension
 
-VS Code extension for `.machine` files — the bracket-delimited DAG wiring notation used by the [CAPDAG](https://capdag.com) system.
+This public landing page is for people editing `.machine` files in VS Code. It
+shows the extension's editor features and configuration; the canonical language
+reference is the CapDAG [machine notation specification](../capdag/docs/09-machine-notation.md).
 
 ## Features
 
@@ -10,19 +12,20 @@ VS Code extension for `.machine` files — the bracket-delimited DAG wiring nota
 - **Autocomplete** — registry-backed suggestions for cap URNs, media URNs, ops, node names, and aliases
 - **Live graph** — Mermaid flowchart that renders beside the editor and updates as you type
 
-## .machine File Format
+## Try a machine file
 
 ```
-[extract_metadata cap:in=media:pdf;extract-metadata;out="media:file-metadata;textable;record"]
-[extract_outline cap:in=media:pdf;extract-outline;out="media:document-outline;textable;record"]
-[generate_thumbnail cap:in=media:pdf;generate-thumbnail;out="media:image;png;thumbnail"]
+[extract cap:in="media:ext=pdf";extract;out="media:ext=txt;enc=utf-8"]
+[embed cap:in="media:enc=utf-8";embed;out="media:embedding-vector;fmt=json;record"]
 
-[pdf_input -> extract_metadata -> metadata]
-[pdf_input -> extract_outline -> outline]
-[pdf_input -> generate_thumbnail -> thumbnail]
+[document -> extract -> text]
+[text -> embed -> vectors]
 ```
 
-Each statement is enclosed in brackets. **Headers** bind an alias to a cap URN. **Wirings** connect nodes through capabilities using `->` arrows. Fan-in uses parenthesized groups: `[(a, b) -> cap -> target]`. Per-item mapping (ForEach) is derived automatically from capability cardinality by the engine.
+This example uses the canonical bracketed form. Headers bind aliases to cap
+URNs; wirings connect nodes through capabilities with `->`. Fan-in uses a
+parenthesized source group, as in `[(a, b) -> cap -> target]`. Per-item mapping
+is derived from capability cardinality and has no separate syntax.
 
 ## Commands
 
