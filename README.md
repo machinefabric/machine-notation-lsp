@@ -2,7 +2,7 @@
 
 This public landing page is for people editing `.machine` files in VS Code. It
 shows the extension's editor features and configuration; the canonical language
-reference is the CapDAG [machine notation specification](../capdag/docs/09-machine-notation.md).
+reference is the CapDAG [machine notation specification](../docs/09-machine-notation.md).
 
 ## Features
 
