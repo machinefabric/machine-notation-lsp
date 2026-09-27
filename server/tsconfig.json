@@ -2,7 +2,12 @@
     "extends": "../tsconfig.json",
     "compilerOptions": {
         "outDir": "./out",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        // ES modules, for webpack to bundle: capdag is one, initialized with
+        // top-level await (it instantiates its proved model as WebAssembly),
+        // which only an import — never a require — can wait for.
+        "module": "es2022",
+        "moduleResolution": "bundler"
     },
     "include": ["src"]
 }

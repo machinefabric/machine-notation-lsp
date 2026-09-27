@@ -1,6 +1,5 @@
 // @ts-nocheck — capdag is a plain JS package without type declarations
-const capdag = require('capdag');
-const { parseMachineWithAST, MachineSyntaxError } = capdag;
+import { parseMachineWithAST, MachineSyntaxError } from 'capdag';
 
 /**
  * Location from Peggy parser: { start: {offset, line, column}, end: {offset, line, column} }

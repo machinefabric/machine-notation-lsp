@@ -1,6 +1,5 @@
 // @ts-nocheck — capdag is a plain JS package without type declarations
-const capdag = require('capdag');
-const { FabricRegistryClient, FabricRegistryEntry, MediaRegistryEntry } = capdag;
+import { FabricRegistryClient, FabricRegistryEntry, MediaRegistryEntry } from 'capdag';
 
 /**
  * Thin wrapper around capdag's FabricRegistryClient for LSP-specific use.

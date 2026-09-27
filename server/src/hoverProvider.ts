@@ -1,6 +1,7 @@
 import { Position, Range } from 'vscode-languageserver/node';
 import { DocumentState, TokenInfo } from './documentState';
 import { RegistryClient } from './registryClient';
+import { CapUrn } from 'capdag';
 
 interface HoverResult {
 	value: string;
@@ -94,11 +95,9 @@ async function getNodeHover(token: TokenInfo, state: DocumentState, registry: Re
 }
 
 async function getCapUrnHover(token: TokenInfo, state: DocumentState, registry: RegistryClient): Promise<HoverResult | null> {
-	// @ts-nocheck
-	const capdag = require('capdag');
 	let capUrn;
 	try {
-		capUrn = capdag.CapUrn.fromString(token.value);
+		capUrn = CapUrn.fromString(token.value);
 	} catch {
 		return { value: `Invalid cap URN: \`${token.value}\`` };
 	}
