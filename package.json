@@ -106,7 +106,7 @@
   "license": "MIT",
   "main": "./dist/extension.js",
   "name": "capdag-machine-notation-lsp",
-  "version": "1.244.855",
+  "version": "1.245.859",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
