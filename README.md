@@ -15,7 +15,7 @@ reference is the CapDAG [machine notation specification](../docs/09-machine-nota
 ## Try a machine file
 
 ```
-[extract cap:in="media:ext=pdf";extract;out="media:ext=txt;enc=utf-8"]
+[extract cap:in="media:document;ext=pdf";extract;out="media:ext=txt;enc=utf-8"]
 [embed cap:in="media:enc=utf-8";embed;out="media:embedding-vector;fmt=json;record"]
 
 [document -> extract -> text]
