@@ -6,11 +6,15 @@ reference is the CapDAG [machine notation specification](../docs/09-machine-nota
 
 ## Features
 
-- **Syntax highlighting** — brackets, cap URNs, media URNs, arrows, aliases
-- **Diagnostics** — parse errors, undefined aliases, duplicate aliases, invalid URNs with precise positions
-- **Hover info** — cap URN details, media def types, registry-enriched metadata
-- **Autocomplete** — registry-backed suggestions for cap URNs, media URNs, ops, node names, and aliases
-- **Live graph** — Mermaid flowchart that renders beside the editor and updates as you type
+- **Syntax highlighting** — headers, cap URNs, arrows, named members and targets, constants, step policies
+- **Diagnostics** — what the text alone refuses, and what the cap definitions refuse: an arg or output
+  the cap does not declare, a member of the wrong type, a constant its media's rules refuse, members
+  the types leave ambiguous — each at the member, step or statement it is about
+- **Hover info** — a step's cap with its args and outputs by name, an arg or output a member or target
+  names, the media a node holds
+- **Autocomplete** — the arg names of a wiring's step as `name=`, its output names, node names,
+  header and fabric aliases, cap URNs and media URNs
+- **Live graph** — a Mermaid flowchart of the resolved machine beside the editor, updated as you type
 
 ## Try a machine file
 
@@ -19,13 +23,15 @@ reference is the CapDAG [machine notation specification](../docs/09-machine-nota
 [embed cap:in="media:enc=utf-8";embed;out="media:embedding-vector;fmt=json;record"]
 
 [document -> extract -> text]
-[text -> embed -> vectors]
+[(text, model="small") -> embed{retry=2} -> vectors]
 ```
 
-This example uses the canonical bracketed form. Headers bind aliases to cap
-URNs; wirings connect nodes through capabilities with `->`. Fan-in uses a
-parenthesized source group, as in `[(a, b) -> cap -> target]`. Per-item mapping
-is derived from capability cardinality and has no separate syntax.
+Headers bind aliases to cap URNs; wirings connect nodes through a step with
+`->`. A member may name the arg it is for (`model=...`) and may be a constant;
+a target may name the output it takes; `()` on either side is a source or a
+sink; a policy in braces after the step says how its failures are met. A step
+may also be a fabric alias, written with no header. Per-item mapping is derived
+from cardinality and has no syntax of its own.
 
 ## Commands
 
@@ -39,10 +45,11 @@ The graph icon also appears in the editor title bar for `.machine` files.
 
 | Setting | Default | Description |
 |---|---|---|
-| `machine.registryUrl` | `https://capdag.com` | Base URL for the cap/media registry |
-| `machine.registryCacheTtl` | `300` | Registry cache TTL in seconds |
+| `machine.registryUrl` | `https://fabric.capdag.com` | Base URL of the fabric registry |
+| `machine.manifestVersion` | unset | The fabric manifest to read; unset, the registry's latest |
 
 ## Requirements
 
 - VS Code 1.85.0 or later
-- Internet connection for registry-backed completions and hover enrichment (diagnostics and graph work offline)
+- A connection to the fabric registry: a machine is resolved against the definitions of the caps it
+  names. Without one, only what the text alone refuses is reported.

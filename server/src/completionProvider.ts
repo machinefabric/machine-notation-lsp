@@ -1,247 +1,217 @@
+// @ts-nocheck — capdag is a plain JS package without type declarations
 import {
 	CompletionItem,
 	CompletionItemKind,
 	InsertTextFormat,
 	Position,
 } from 'vscode-languageserver/node';
+import { CapUrn } from 'capdag';
 
 import { DocumentState } from './documentState';
 import { RegistryClient } from './registryClient';
 
-/**
- * Determine completion context from cursor position within the document text.
- *
- * Supports both bracketed `[...]` and line-based (no brackets) statement forms.
- * For bracketed mode, finds the innermost unclosed `[`.
- * For line-based mode, uses the start of the current line as the context boundary.
- */
-function getContext(text: string, position: Position): {
-	type: 'header_start' | 'cap_urn' | 'media_urn' | 'wiring_source' | 'wiring_target' | 'unknown';
+type ContextType = 'statement_start' | 'cap_urn' | 'media_urn' | 'step' | 'sources' | 'targets' | 'unknown';
+
+interface CompletionContext {
+	type: ContextType;
+	/** The word being written. */
 	prefix: string;
-} {
-	const lines = text.split('\n');
-	const line = lines[position.line] || '';
-	const lineUpToCursor = line.substring(0, position.character);
+	/** The step of the wiring, when the line says it. */
+	step: string | null;
+}
 
-	// Find the innermost unclosed bracket (bracketed mode)
-	let bracketDepth = 0;
-	let bracketStart = -1;
-	for (let i = lineUpToCursor.length - 1; i >= 0; i--) {
-		if (lineUpToCursor[i] === ']') bracketDepth++;
-		if (lineUpToCursor[i] === '[') {
-			if (bracketDepth === 0) {
-				bracketStart = i;
-				break;
-			}
-			bracketDepth--;
-		}
-	}
-
-	// Determine the context text: inside bracket (skip `[`), or the full line (line-based)
-	let inside: string;
-	if (bracketStart >= 0) {
-		inside = lineUpToCursor.substring(bracketStart + 1);
-	} else {
-		// Line-based mode: use the full line up to cursor
-		inside = lineUpToCursor;
-	}
-
-	// Empty line — check if cursor is right after [ or at start of empty line
-	const trimmed = inside.trim();
-	if (trimmed === '') {
-		return { type: 'header_start', prefix: '' };
-	}
-
-	// Check if we're in a cap URN context (after "cap:")
-	if (/cap:/.test(inside)) {
-		// Check if we're after in= or out= and expecting a media URN
-		const afterEquals = inside.match(/(?:in|out)=([^;"\]]*?)$/);
-		if (afterEquals) {
-			return { type: 'media_urn', prefix: afterEquals[1] };
-		}
-		const afterQuotedEquals = inside.match(/(?:in|out)="([^"]*?)$/);
-		if (afterQuotedEquals) {
-			return { type: 'media_urn', prefix: afterQuotedEquals[1] };
-		}
-		return { type: 'cap_urn', prefix: inside.trim() };
-	}
-
-	// Check if we're in a wiring context (has ->)
-	if (inside.includes('->')) {
-		const parts = inside.split('->');
-		if (parts.length >= 3) {
-			// After second arrow — completing target
-			return { type: 'wiring_target', prefix: parts[parts.length - 1].trim() };
-		}
-		if (parts.length === 2) {
-			// After first arrow — completing cap alias
-			return { type: 'wiring_target', prefix: parts[1].trim() };
-		}
-	}
-
-	// At the start — could be header or wiring source
-	if (/^[a-zA-Z_]/.test(trimmed)) {
-		return { type: 'header_start', prefix: trimmed };
-	}
-
-	if (trimmed.startsWith('(')) {
-		return { type: 'wiring_source', prefix: trimmed };
-	}
-
-	return { type: 'unknown', prefix: trimmed };
+/** The step a wiring on this line names, wherever the cursor is in it. */
+function stepOfLine(line: string): string | null {
+	const found = line.match(/->\s*([A-Za-z_][A-Za-z0-9_-]*)\s*(\{[^}]*\})?\s*->/);
+	return found ? found[1] : null;
 }
 
 /**
- * Provide completion items for the given position.
+ * What is being written at the cursor. Both statement forms are read: in a
+ * bracketed statement the context starts at its innermost unclosed `[`, in a
+ * line-based one at the start of the line.
  */
+export function contextAt(text: string, position: Position): CompletionContext {
+	const line = text.split('\n')[position.line] || '';
+	const upToCursor = line.substring(0, position.character);
+	let depth = 0;
+	let start = -1;
+	for (let i = upToCursor.length - 1; i >= 0; i--) {
+		if (upToCursor[i] === ']') depth++;
+		if (upToCursor[i] === '[') {
+			if (depth === 0) {
+				start = i;
+				break;
+			}
+			depth--;
+		}
+	}
+	const inside = start >= 0 ? upToCursor.substring(start + 1) : upToCursor;
+	const word = (inside.match(/[A-Za-z0-9_-]*$/) || [''])[0];
+	const step = stepOfLine(line);
+	if (inside.trim() === '') return { type: 'statement_start', prefix: '', step };
+
+	if (/cap:/.test(inside)) {
+		const media = inside.match(/(?:in|out)="?([^;"\]]*)$/);
+		if (media) return { type: 'media_urn', prefix: media[1], step };
+		return { type: 'cap_urn', prefix: inside.trim(), step };
+	}
+	const arrows = (inside.match(/->/g) || []).length;
+	if (arrows >= 2) return { type: 'targets', prefix: word, step };
+	if (arrows === 1) return { type: 'step', prefix: word, step };
+	if (/^\s*\(/.test(inside)) return { type: 'sources', prefix: word, step };
+	if (/^\s*[A-Za-z_][A-Za-z0-9_-]*$/.test(inside)) return { type: 'statement_start', prefix: word, step };
+	return { type: 'unknown', prefix: word, step };
+}
+
+/** Completion items for a position. */
 export async function getCompletions(
 	state: DocumentState,
 	position: Position,
 	text: string,
 	registry: RegistryClient
 ): Promise<CompletionItem[]> {
-	const ctx = getContext(text, position);
-
+	const ctx = contextAt(text, position);
 	switch (ctx.type) {
-		case 'header_start':
-			return getHeaderStartCompletions(state, ctx.prefix, registry);
+		case 'statement_start':
+			return [...nodeItems(state, ctx.prefix), ...stepItems(state, ctx.prefix, await capAliases(registry))];
+		case 'step':
+			return stepItems(state, ctx.prefix, await capAliases(registry));
+		case 'sources':
+			return [...await argItems(state, registry, ctx), ...nodeItems(state, ctx.prefix)];
+		case 'targets':
+			return [...await outputItems(state, registry, ctx), ...nodeItems(state, ctx.prefix)];
 		case 'cap_urn':
-			return getCapUrnCompletions(ctx.prefix, registry);
+			return capUrnItems(ctx.prefix, await caps(registry));
 		case 'media_urn':
-			return getMediaUrnCompletions(ctx.prefix, registry);
-		case 'wiring_source':
-		case 'wiring_target':
-			return getWiringCompletions(state, ctx.prefix);
+			return mediaUrnItems(ctx.prefix, await caps(registry));
 		default:
 			return [];
 	}
 }
 
-async function getHeaderStartCompletions(
-	state: DocumentState,
-	prefix: string,
-	registry: RegistryClient
-): Promise<CompletionItem[]> {
+/**
+ * Every cap of the registry, for completions. A registry that cannot give
+ * them leaves the completions it would have offered out; the reason is
+ * logged, never hidden as an empty registry.
+ */
+async function caps(registry: RegistryClient): Promise<any[]> {
+	try {
+		return await registry.allCaps();
+	} catch (error: any) {
+		console.error(`[machine-lsp] the registry's caps are not available: ${error.message}`);
+		return [];
+	}
+}
+
+async function capAliases(registry: RegistryClient): Promise<Array<[string, string]>> {
+	await caps(registry);
+	return registry.definitions.cachedCapAliases();
+}
+
+function nodeItems(state: DocumentState, prefix: string): CompletionItem[] {
+	if (!state.nodeMedia) return [];
 	const items: CompletionItem[] = [];
-
-	// Suggest existing node names for starting a wiring
-	if (state.nodeMedia) {
-		for (const [nodeName] of state.nodeMedia) {
-			if (prefix && !nodeName.startsWith(prefix)) continue;
-			items.push({
-				label: nodeName,
-				kind: CompletionItemKind.Variable,
-				detail: `Node: ${state.nodeMedia.get(nodeName)?.toString() || 'unknown'}`,
-				sortText: `0_${nodeName}`, // Sort nodes first
-			});
-		}
+	for (const [name, media] of state.nodeMedia) {
+		if (prefix && !name.startsWith(prefix)) continue;
+		items.push({ label: name, kind: CompletionItemKind.Variable, detail: `Node: ${media.toString()}`, sortText: `1_${name}` });
 	}
+	return items;
+}
 
-	// Suggest existing cap aliases for starting a wiring
-	if (state.aliasMap) {
-		for (const [alias, entry] of state.aliasMap) {
-			if (prefix && !alias.startsWith(prefix)) continue;
-			// Skip if already listed as a node name
-			if (state.nodeMedia?.has(alias)) continue;
-			const opTag = entry.capUrn?.getTag?.('op');
-			items.push({
-				label: alias,
-				kind: CompletionItemKind.Function,
-				detail: `Cap: ${opTag || entry.capUrn?.toString() || alias}`,
-				sortText: `1_${alias}`, // Sort aliases after nodes
-			});
-		}
-	}
-
-	// Suggest op= values as alias names from registry (for new headers)
-	const ops = await registry.getKnownOps();
-	for (const op of ops) {
-		if (prefix && !op.startsWith(prefix)) continue;
-		// Skip if already exists as an alias in this document
-		if (state.aliasMap?.has(op)) continue;
+function stepItems(state: DocumentState, prefix: string, fabricAliases: Array<[string, string]>): CompletionItem[] {
+	const items: CompletionItem[] = [];
+	const declared = new Set<string>();
+	for (const statement of state.statements || []) {
+		if (statement.kind === 'wiring') continue;
+		declared.add(statement.alias);
+		if (prefix && !statement.alias.startsWith(prefix)) continue;
 		items.push({
-			label: op,
+			label: statement.alias,
 			kind: CompletionItemKind.Function,
-			detail: `New header: op=${op}`,
-			sortText: `2_${op}`, // Sort registry suggestions last
-			insertTextFormat: InsertTextFormat.PlainText,
+			detail: statement.kind === 'machine_header' ? `Machine: ${statement.reference}` : `Cap: ${statement.capUrn}`,
+			sortText: `2_${statement.alias}`,
 		});
 	}
-
+	for (const [name, target] of fabricAliases) {
+		if (declared.has(name) || (prefix && !name.startsWith(prefix))) continue;
+		items.push({ label: name, kind: CompletionItemKind.Function, detail: `Fabric alias: ${target}`, sortText: `3_${name}` });
+	}
 	return items;
 }
 
-async function getCapUrnCompletions(
-	prefix: string,
-	registry: RegistryClient
-): Promise<CompletionItem[]> {
-	const caps = await registry.fetchCapabilities();
-	const items: CompletionItem[] = [];
+/** The cap the step of a wiring stands for, fetched: a header's, or the fabric alias's. */
+async function capOfStep(state: DocumentState, registry: RegistryClient, step: string | null): Promise<any | null> {
+	if (step === null) return null;
+	const header = (state.statements || []).find(s => s.kind === 'cap_header' && s.alias === step);
+	let urn = header ? header.capUrn : registry.definitions.aliasTarget(step);
+	if (!urn) {
+		await caps(registry);
+		urn = registry.definitions.aliasTarget(step);
+	}
+	if (!urn || !urn.startsWith('cap:')) return null;
+	try {
+		return await registry.cap(CapUrn.fromString(urn).toString());
+	} catch (_) {
+		return null;
+	}
+}
 
-	for (const cap of caps) {
-		if (prefix && !cap.urn.startsWith(prefix)) continue;
-		items.push({
-			label: cap.urn,
+/** The args of the wiring's step, each as `name=`: a member that says which arg it is for. */
+async function argItems(state: DocumentState, registry: RegistryClient, ctx: CompletionContext): Promise<CompletionItem[]> {
+	const cap = await capOfStep(state, registry, ctx.step);
+	if (!cap) return [];
+	return cap.args
+		.filter(arg => !ctx.prefix || arg.name.startsWith(ctx.prefix))
+		.map(arg => ({
+			label: `${arg.name}=`,
+			kind: CompletionItemKind.Field,
+			detail: `${arg.acceptedUrn()}${arg.is_sequence ? ' (sequence)' : ''}`,
+			documentation: arg.arg_description || undefined,
+			insertText: `${arg.name}=`,
+			insertTextFormat: InsertTextFormat.PlainText,
+			sortText: `0_${arg.name}`,
+		}));
+}
+
+/** The outputs of the wiring's step, each as `name=`: a target that says which output it takes. */
+async function outputItems(state: DocumentState, registry: RegistryClient, ctx: CompletionContext): Promise<CompletionItem[]> {
+	const cap = await capOfStep(state, registry, ctx.step);
+	if (!cap) return [];
+	return cap.getOutputs()
+		.filter(output => !ctx.prefix || output.name.startsWith(ctx.prefix))
+		.map(output => ({
+			label: `${output.name}=`,
+			kind: CompletionItemKind.Field,
+			detail: `${output.media_urn}${output.is_sequence ? ' (sequence)' : ''}${output.optional ? ', may not fire' : ''}`,
+			documentation: output.output_description || undefined,
+			insertText: `${output.name}=`,
+			insertTextFormat: InsertTextFormat.PlainText,
+			sortText: `0_${output.name}`,
+		}));
+}
+
+function capUrnItems(prefix: string, all: any[]): CompletionItem[] {
+	return all
+		.filter(cap => !prefix || cap.urn.toString().startsWith(prefix))
+		.map(cap => ({
+			label: cap.urn.toString(),
 			kind: CompletionItemKind.Value,
-			detail: cap.title || undefined,
-			documentation: cap.description || undefined,
-			insertText: cap.urn,
+			detail: cap.title,
+			documentation: cap.cap_description || undefined,
+			insertText: cap.urn.toString(),
 			insertTextFormat: InsertTextFormat.PlainText,
-		});
-	}
-
-	return items;
+		}));
 }
 
-async function getMediaUrnCompletions(
-	prefix: string,
-	registry: RegistryClient
-): Promise<CompletionItem[]> {
-	const urns = await registry.getKnownMediaUrns();
-	const items: CompletionItem[] = [];
-
-	for (const urn of urns) {
-		if (prefix && !urn.startsWith(prefix)) continue;
-		items.push({
-			label: urn,
-			kind: CompletionItemKind.TypeParameter,
-			insertTextFormat: InsertTextFormat.PlainText,
-		});
+function mediaUrnItems(prefix: string, all: any[]): CompletionItem[] {
+	const urns = new Set<string>();
+	for (const cap of all) {
+		urns.add(cap.urn.getInSpec());
+		urns.add(cap.urn.getOutSpec());
 	}
-
-	return items;
-}
-
-function getWiringCompletions(
-	state: DocumentState,
-	prefix: string
-): CompletionItem[] {
-	const items: CompletionItem[] = [];
-
-	// Suggest existing node names
-	if (state.nodeMedia) {
-		for (const [nodeName, mediaUrn] of state.nodeMedia) {
-			if (prefix && !nodeName.startsWith(prefix)) continue;
-			items.push({
-				label: nodeName,
-				kind: CompletionItemKind.Variable,
-				detail: `Node: ${mediaUrn.toString()}`,
-			});
-		}
-	}
-
-	// Suggest cap aliases
-	if (state.aliasMap) {
-		for (const [alias, entry] of state.aliasMap) {
-			if (prefix && !alias.startsWith(prefix)) continue;
-			const opTag = entry.capUrn.getTag('op');
-			items.push({
-				label: alias,
-				kind: CompletionItemKind.Function,
-				detail: `Cap: ${opTag || entry.capUrn.toString()}`,
-			});
-		}
-	}
-
-	return items;
+	return [...urns]
+		.filter(urn => !prefix || urn.startsWith(prefix))
+		.sort()
+		.map(urn => ({ label: urn, kind: CompletionItemKind.TypeParameter, insertTextFormat: InsertTextFormat.PlainText }));
 }

@@ -35,3 +35,4 @@ coverage
 .env
 .scrap/
 .wsb/
+out-test

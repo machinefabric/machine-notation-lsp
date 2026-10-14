@@ -73,8 +73,8 @@ function createClientOptions(
 		workspaceFolder: folder,
 		outputChannel: outputChannel,
 		initializationOptions: {
-			registryUrl: config.get('registryUrl', 'https://capdag.com'),
-			registryCacheTtl: config.get('registryCacheTtl', 300),
+			registryUrl: config.get('registryUrl', 'https://fabric.capdag.com'),
+			manifestVersion: config.get('manifestVersion', null),
 		},
 	};
 }

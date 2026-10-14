@@ -5,50 +5,29 @@ import {
 	Position,
 } from 'vscode-languageserver/node';
 
-import { DocumentState } from './documentState';
+import { DocumentState, PeggyLocation } from './documentState';
 
-/**
- * Convert a MachineSyntaxError into LSP Diagnostic[].
- *
- * Uses the error's location property (from Peggy parser) for precise positioning.
- * Falls back to first line if no location is available.
- */
+/** A notation location (1-based lines and columns) as an LSP range (0-based). */
+export function rangeOf(location: PeggyLocation): Range {
+	return Range.create(
+		Position.create(location.start.line - 1, location.start.column - 1),
+		Position.create(location.end.line - 1, location.end.column - 1)
+	);
+}
+
+/** The first line of a text: where a problem that is about the whole document is shown. */
+function firstLine(text: string): Range {
+	const end = text.indexOf('\n');
+	return Range.create(Position.create(0, 0), Position.create(0, end >= 0 ? end : text.length));
+}
+
+/** Every problem of a document, each where it stands. */
 export function getDiagnostics(state: DocumentState): Diagnostic[] {
-	if (!state.error) {
-		return [];
-	}
-
-	const error = state.error;
-	let range: Range;
-
-	if (error.location) {
-		// Peggy locations are 1-based; LSP positions are 0-based
-		const loc = error.location;
-		range = Range.create(
-			Position.create(loc.start.line - 1, loc.start.column - 1),
-			Position.create(loc.end.line - 1, loc.end.column - 1)
-		);
-	} else {
-		// No location — highlight the first line
-		range = Range.create(
-			Position.create(0, 0),
-			Position.create(0, state.text.length > 0 ? Math.min(state.text.indexOf('\n'), state.text.length) : 0)
-		);
-		// Fix: if indexOf returns -1, use full first line
-		if (range.end.character <= 0) {
-			const firstLineEnd = state.text.indexOf('\n');
-			range = Range.create(
-				Position.create(0, 0),
-				Position.create(0, firstLineEnd >= 0 ? firstLineEnd : state.text.length)
-			);
-		}
-	}
-
-	return [{
+	return state.problems.map(problem => ({
 		severity: DiagnosticSeverity.Error,
-		range,
-		message: error.message,
+		range: problem.location ? rangeOf(problem.location) : firstLine(state.text),
+		message: problem.message,
 		source: 'machine',
-		code: error.code,
-	}];
+		code: problem.code,
+	}));
 }
