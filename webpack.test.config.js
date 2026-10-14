@@ -10,7 +10,8 @@ module.exports = {
   entry: "./server/test/server.test.ts",
   output: {
     path: path.resolve(__dirname, "out-test"),
-    filename: "server.test.js",
+    // Not named *.test.js: the bundle is the tests built, not a test file of its own.
+    filename: "server-tests.bundle.js",
     libraryTarget: "commonjs2",
   },
   devtool: "source-map",
