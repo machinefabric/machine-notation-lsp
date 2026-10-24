@@ -45,7 +45,7 @@ The graph icon also appears in the editor title bar for `.machine` files.
 
 | Setting | Default | Description |
 |---|---|---|
-| `machine.registryUrl` | `https://fabric.capdag.com` | Base URL of the fabric registry |
+| `machine.registryUrl` | `https://fabric.capdag.com` | Anchor of the fabric registry: the URL it is chartered at |
 | `machine.manifestVersion` | unset | The fabric manifest to read; unset, the registry's latest |
 
 ## Requirements

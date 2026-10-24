@@ -26,15 +26,16 @@ export class RegistryClient {
 	}
 
 	/**
-	 * @param baseUrl - The registry's base URL
+	 * @param anchor - The anchor the registry is chartered at; where its
+	 *   manifests and definitions are is read from its charter
 	 * @param manifestVersion - A manifest to pin, or null to follow the latest
 	 * @param fetchImpl - How a URL is fetched (the runtime's fetch when not given)
 	 */
-	static async open(baseUrl: string, manifestVersion: number | null, fetchImpl?: (url: string) => Promise<any>): Promise<RegistryClient> {
+	static async open(anchor: string, manifestVersion: number | null, fetchImpl?: (url: string) => Promise<any>): Promise<RegistryClient> {
 		const options = fetchImpl ? { fetch: fetchImpl } : {};
 		const client = manifestVersion === null
-			? await FabricRegistryClient.latest(baseUrl, options)
-			: new FabricRegistryClient(baseUrl, manifestVersion, options);
+			? await FabricRegistryClient.latest(anchor, options)
+			: new FabricRegistryClient(anchor, manifestVersion, options);
 		return new RegistryClient(client);
 	}
 

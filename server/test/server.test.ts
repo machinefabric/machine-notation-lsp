@@ -40,7 +40,7 @@ async function runTest(name: string, fn: () => Promise<void>): Promise<void> {
 }
 
 // ============================================================================
-// A fabric registry in memory, laid out as the publisher lays it out.
+// A fabric registry in memory, served at the locations its charter states.
 // ============================================================================
 
 const REGISTRY = 'https://fabric.example';
@@ -80,6 +80,15 @@ function fakeFetch(change: (served: any) => void = () => {}) {
 	};
 	change(served);
 	const objects = new Map<string, any>();
+	objects.set(`${REGISTRY}/charter.json`, {
+		format: 'machinefabric-registry-charter/1', anchor: REGISTRY, kind: 'fabric', slug: 'test-fabric',
+		environment: 'prod', issued_at: 1792800000, not_after: null,
+		locations: {
+			manifest: `${REGISTRY}/manifest/{manifest_version}.json`,
+			latest: `${REGISTRY}/manifest/latest.json`,
+			definition: `${REGISTRY}/{kind}/{urn_hash}/{version}.json`,
+		},
+	});
 	objects.set(`${REGISTRY}/manifest/latest.json`, { version: 8 });
 	objects.set(`${REGISTRY}/manifest/8.json`, {
 		version: 8,
@@ -87,13 +96,18 @@ function fakeFetch(change: (served: any) => void = () => {}) {
 		caps: Object.fromEntries(Object.keys(served.caps).map(urn => [urn, 1])),
 		media: Object.fromEntries(Object.keys(served.media).map(urn => [urn, 1])),
 		aliases: Object.fromEntries(Object.keys(served.aliases).map(name => [name, 1])),
+		dims: {},
 	});
 	for (const [urn, body] of Object.entries(served.caps)) objects.set(`${REGISTRY}/caps/${sha(urn)}/1.json`, body);
 	for (const [urn, body] of Object.entries(served.media)) objects.set(`${REGISTRY}/media/${sha(urn)}/1.json`, body);
 	for (const [name, body] of Object.entries(served.aliases)) objects.set(`${REGISTRY}/aliases/${sha(name)}/1.json`, body);
-	return async (url: string) => objects.has(url)
-		? { status: 200, ok: true, json: async () => JSON.parse(JSON.stringify(objects.get(url))) }
-		: { status: 404, ok: false, json: async () => ({}) };
+	// The charter is asked for with a cache-bust query.
+	return async (url: string) => {
+		const bare = url.split('?')[0];
+		return objects.has(bare)
+			? { status: 200, ok: true, json: async () => JSON.parse(JSON.stringify(objects.get(bare))) }
+			: { status: 404, ok: false, json: async () => ({}) };
+	};
 }
 
 const HEADER = `[extract ${EXTRACT}]`;

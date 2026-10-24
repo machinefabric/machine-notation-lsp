@@ -29,7 +29,7 @@ const readCounters = new Map<string, number>();
 /** The registry every document is read against: opened once, from the settings. */
 let registryReady: Promise<RegistryClient>;
 
-/** The fabric registry's public address, the same default every capdag library has. */
+/** The anchor of MachineFabric's production fabric, the same default every capdag library has. */
 const DEFAULT_REGISTRY_URL = 'https://fabric.capdag.com';
 
 connection.onInitialize((params: InitializeParams) => {

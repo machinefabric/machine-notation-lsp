@@ -30,7 +30,7 @@
         },
         "machine.registryUrl": {
           "default": "https://fabric.capdag.com",
-          "description": "Base URL of the fabric registry the caps, media and aliases of a machine are read from",
+          "description": "Anchor of the fabric registry (the URL it is chartered at) the caps, media and aliases of a machine are read from",
           "type": "string"
         }
       },
@@ -110,7 +110,7 @@
   "license": "MIT",
   "main": "./dist/extension.js",
   "name": "capdag-machine-notation-lsp",
-  "version": "1.282.1068",
+  "version": "1.283.1074",
   "publisher": "bahramjoharshamshiri",
   "repository": {
     "type": "git",
