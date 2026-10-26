@@ -8,6 +8,6 @@
         "vscode-uri": "^3.1.0"
     },
     "devDependencies": {
-        "capdag": "^1.480.4"
+        "capdag": "^1.483.9"
     }
 }
