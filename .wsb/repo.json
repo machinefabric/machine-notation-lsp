@@ -1,0 +1,10 @@
+{
+  "name": "machine-notation-lsp",
+  "alias": "machine_notation_lsp",
+  "templates_root": "../..",
+  "version": {
+    "major": 1,
+    "file": "version.txt",
+    "detect_manifests": true
+  }
+}
