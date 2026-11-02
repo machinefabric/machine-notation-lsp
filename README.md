@@ -19,8 +19,8 @@ reference is the CapDAG [machine notation specification](../docs/09-machine-nota
 ## Try a machine file
 
 ```
-[extract cap:in="media:document;ext=pdf";extract;out="media:ext=txt;enc=utf-8"]
-[embed cap:in="media:enc=utf-8";embed;out="media:embedding-vector;fmt=json;record"]
+[extract cap:in="media:document;ext=pdf";extract;out="media:ext=txt;enc=utf8;plain-text"]
+[embed cap:in="media:enc=utf8";embed;out="media:embedding-vector;enc=utf8;fmt=json;record"]
 
 [document -> extract -> text]
 [(text, model="small") -> embed{retry=2} -> vectors]

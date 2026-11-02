@@ -45,7 +45,7 @@ async function runTest(name: string, fn: () => Promise<void>): Promise<void> {
 
 const REGISTRY = 'https://fabric.example';
 const PDF = 'media:document;ext=pdf';
-const TEXT = 'media:enc=utf-8;ext=txt';
+const TEXT = 'media:enc=utf8;ext=txt;plain-text';
 const PAGES = 'media:integer;max-pages';
 const VECTOR = 'media:record;vec';
 const EXTRACT = CapUrn.fromString(`cap:in="${PDF}";extract;out="${TEXT}"`).toString();
