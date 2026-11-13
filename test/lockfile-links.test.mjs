@@ -123,3 +123,125 @@ test("TEST13132 the lockfiles git holds for a repository are checked, as staged"
   assert.ok(own.files.length > 0, "this repository commits a lockfile, so the check must have found one");
   assert.deepEqual(own.problems, []);
 });
+
+// A git repository in a scratch folder holding `files` as staged, which is all
+// the check reads; the scratch folder is removed when the test ends.
+function stagedRepository(t, files) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "lockfile-links-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  execFileSync("git", ["-C", root, "init", "--quiet"]);
+  for (const [file, text] of Object.entries(files)) {
+    fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+    execFileSync("git", ["-C", root, "add", file]);
+  }
+  return repositoryRoot(root);
+}
+
+function manifest(dependencies) {
+  return `${JSON.stringify({ name: "app", version: "1.0.0", dependencies }, null, "\t")}\n`;
+}
+
+// What npm writes for `"sigdash": "file:../sigdash"`: the link, the linked
+// folder's own entry, and what that folder has installed under it.
+const SIGDASH_LINKED = {
+  "../sigdash": { version: "1.113.883", dependencies: { lucide: "^1.17.0" } },
+  "../sigdash/node_modules/lucide": { version: "1.17.0", resolved: "https://registry.npmjs.org/lucide/-/lucide-1.17.0.tgz" },
+  "node_modules/sigdash": { resolved: "../sigdash", link: true },
+};
+
+// TEST13134: a file: dependency the repository's own package.json declares, as
+// committed, passes: the link to the folder it names, that folder's entry and
+// what is installed under it. Its .wstemplate may declare it as
+// `file:{{ … }}` beside it, and a lockfile in a subfolder is read against the
+// package.json in that subfolder.
+test("TEST13134 a file: dependency the repository's package.json declares passes", (t) => {
+  const declared = stagedRepository(t, {
+    "package.json": manifest({ sigdash: "file:../sigdash", "left-pad": "^1.3.0" }),
+    "package.json.wstemplate": manifest({ sigdash: "file:{{ projects.sigdash.path_from_here }}", "left-pad": "^1.3.0" }),
+    "package-lock.json": lockfile({ ...SIGDASH_LINKED, "node_modules/left-pad": { version: "1.3.0", resolved: REGISTRY } }),
+  });
+  assert.deepEqual(repositoryProblems(declared), { files: ["package-lock.json"], problems: [] });
+
+  const nested = stagedRepository(t, {
+    "server/package.json": manifest({ shared: "file:../../shared" }),
+    "server/package-lock.json": lockfile({
+      "../../shared": { version: "1.0.0" },
+      "node_modules/shared": { resolved: "../../shared", link: true },
+    }),
+  });
+  assert.deepEqual(repositoryProblems(nested), { files: ["server/package-lock.json"], problems: [] });
+});
+
+// TEST13135: a link outside the repository that package.json does not declare
+// is refused, naming the lockfile and the package, beside one it does declare;
+// and a declaration only on disk, not staged, is no declaration.
+test("TEST13135 an undeclared link outside the repository is refused beside a declared one", (t) => {
+  const root = stagedRepository(t, {
+    "package.json": manifest({ sigdash: "file:../sigdash", capdag: "^1.0.0" }),
+    "package-lock.json": lockfile({ ...SIGDASH_LINKED, "node_modules/capdag": { resolved: "../capdag/capdag-js", link: true } }),
+  });
+  assert.deepEqual(repositoryProblems(root).problems, [
+    'package-lock.json: package "capdag" (node_modules/capdag) is linked to ../capdag/capdag-js, outside the repository',
+  ]);
+
+  fs.writeFileSync(path.join(root, "package.json"), manifest({ sigdash: "file:../sigdash", capdag: "file:../capdag/capdag-js" }));
+  assert.deepEqual(repositoryProblems(root).problems, [
+    'package-lock.json: package "capdag" (node_modules/capdag) is linked to ../capdag/capdag-js, outside the repository',
+  ]);
+});
+
+// TEST13136: a declaration covers its own package and its own folder only: a
+// link to another folder than the one declared, and another package linked to
+// the declared folder, are refused, naming the lockfile and the package.
+test("TEST13136 a link to another folder than declared, or by another name, is refused", (t) => {
+  const elsewhere = stagedRepository(t, {
+    "package.json": manifest({ sigdash: "file:../sigdash" }),
+    "package-lock.json": lockfile({
+      "../vendor/sigdash": { version: "1.0.0" },
+      "node_modules/sigdash": { resolved: "../vendor/sigdash", link: true },
+    }),
+  });
+  assert.deepEqual(repositoryProblems(elsewhere).problems, [
+    'package-lock.json: package "sigdash" is located at ../vendor/sigdash, outside the repository',
+    'package-lock.json: package "sigdash" (node_modules/sigdash) is linked to ../vendor/sigdash, outside the repository; package.json declares it as file:../sigdash',
+  ]);
+
+  const renamed = stagedRepository(t, {
+    "package.json": manifest({ sigdash: "file:../sigdash" }),
+    "package-lock.json": lockfile({ ...SIGDASH_LINKED, "node_modules/sigdash-fork": { resolved: "../sigdash", link: true } }),
+  });
+  assert.deepEqual(repositoryProblems(renamed).problems, [
+    'package-lock.json: package "sigdash-fork" (node_modules/sigdash-fork) is linked to ../sigdash, outside the repository',
+  ]);
+});
+
+// TEST13137: in a .wstemplate, only a value that is `file:{{ … }}` outright
+// declares a file: dependency. One a local render chooses
+// (`{% if env.MFR_LOCAL_LIBS %}"file:{{ … }}"{% else %}…`) is a registry
+// dependency as committed, so its link is refused; and a template declaration
+// whose render, package.json, names no folder for it cannot say where the link
+// may lead, so that link is refused too.
+test("TEST13137 a local-render choice in a template declares nothing, and a declaration needs its rendered folder", (t) => {
+  const localRender = stagedRepository(t, {
+    "package.json": manifest({ capdag: "^1.0.0" }),
+    "package.json.wstemplate": manifest({ capdag: "@@" }).replace(
+      '"@@"',
+      '{% if env.MFR_LOCAL_LIBS %}"file:{{ projects.capdag_js.path_from_here }}"{% else %}"^{{ projects.capdag_js.latest_remote_version }}"{% endif %}',
+    ),
+    "package-lock.json": lockfile({ "node_modules/capdag": { resolved: "../capdag/capdag-js", link: true } }),
+  });
+  assert.deepEqual(repositoryProblems(localRender).problems, [
+    'package-lock.json: package "capdag" (node_modules/capdag) is linked to ../capdag/capdag-js, outside the repository',
+  ]);
+
+  const unrendered = stagedRepository(t, {
+    "package.json": manifest({ sigdash: "^1.0.0" }),
+    "package.json.wstemplate": manifest({ sigdash: "file:{{ projects.sigdash.path_from_here }}" }),
+    "package-lock.json": lockfile({ "node_modules/sigdash": { resolved: "../sigdash", link: true } }),
+  });
+  assert.deepEqual(repositoryProblems(unrendered).problems, [
+    'package-lock.json: package "sigdash" (node_modules/sigdash) is linked to ../sigdash, outside the repository; ' +
+      "package.json.wstemplate declares it as a file: dependency, but package.json, its render, names no folder for it",
+  ]);
+});

@@ -2,7 +2,7 @@
 
 Generated from the test catalogue. Edit the tests, not this file.
 
-10 tests: 10 numbered, 0 unnumbered.
+14 tests: 14 numbered, 0 unnumbered.
 
 ## Numbered
 
@@ -18,4 +18,8 @@ Generated from the test catalogue. Edit the tests, not this file.
 | TEST13130 | capdag/machine-notation-lsp | js | `TEST13130 a package located or resolved by path outside the repository is refused` | test/lockfile-links.test.mjs:58 | TEST13130: a package located, or resolved by path, outside the repository is refused: the linked folder's own entry ("../sigdash"), a file: tarball beside the repository, and an absolute path. |
 | TEST13131 | capdag/machine-notation-lsp | js | `TEST13131 registry and git URLs and paths inside the repository pass; an unreadable lockfile is an error` | test/lockfile-links.test.mjs:77 | TEST13131: what a clean checkout can install passes — registry and git URLs, a tarball and a workspace inside the repository — and a lockfile the check cannot read (not JSON, an older lockfileVersion) is an error naming the file, never a pass. |
 | TEST13132 | capdag/machine-notation-lsp | js | `TEST13132 the lockfiles git holds for a repository are checked, as staged` | test/lockfile-links.test.mjs:98 | TEST13132: the check reads every lockfile git's index holds for a repository — what a commit records — and not the file on disk: a staged lockfile with a planted link fails it, the clean one passes, and every lockfile this repository holds passes. |
+| TEST13134 | capdag/machine-notation-lsp | js | `TEST13134 a file: dependency the repository's package.json declares passes` | test/lockfile-links.test.mjs:158 | TEST13134: a file: dependency the repository's own package.json declares, as committed, passes: the link to the folder it names, that folder's entry and what is installed under it. Its .wstemplate may declare it as `file:{{ … }}` beside it, and a lockfile in a subfolder is read against the package.json in that subfolder. |
+| TEST13135 | capdag/machine-notation-lsp | js | `TEST13135 an undeclared link outside the repository is refused beside a declared one` | test/lockfile-links.test.mjs:179 | TEST13135: a link outside the repository that package.json does not declare is refused, naming the lockfile and the package, beside one it does declare; and a declaration only on disk, not staged, is no declaration. |
+| TEST13136 | capdag/machine-notation-lsp | js | `TEST13136 a link to another folder than declared, or by another name, is refused` | test/lockfile-links.test.mjs:197 | TEST13136: a declaration covers its own package and its own folder only: a link to another folder than the one declared, and another package linked to the declared folder, are refused, naming the lockfile and the package. |
+| TEST13137 | capdag/machine-notation-lsp | js | `TEST13137 a local-render choice in a template declares nothing, and a declaration needs its rendered folder` | test/lockfile-links.test.mjs:225 | TEST13137: in a .wstemplate, only a value that is `file:{{ … }}` outright declares a file: dependency. One a local render chooses (`{% if env.MFR_LOCAL_LIBS %}"file:{{ … }}"{% else %}…`) is a registry dependency as committed, so its link is refused; and a template declaration whose render, package.json, names no folder for it cannot say where the link may lead, so that link is refused too. |
 
