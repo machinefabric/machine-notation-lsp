@@ -1,4 +1,10 @@
 {
+{%- if env.MFR_LIBS == "channel" %}
+  "overrides": {
+    "lungo-ts": "file:{{ build.root_from_here }}/libraries/lungo-ts/{{ projects.lungo_rs.version }}/package",
+    "tagged-urn": "file:{{ build.root_from_here }}/libraries/tagged-urn-js/{{ projects.tagged_urn_js.version }}/package"
+  },
+{%- endif %}
   "activationEvents": [
     "onLanguage:capdag-machine"
   ],
@@ -85,7 +91,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/vscode": "^1.85.0",
-    "capdag": "^{{ projects.capdag_js.latest_remote_version }}",
+    "capdag": {% if env.MFR_LIBS == "working" %}"file:{{ projects.capdag_js.path_from_here }}"{% elif env.MFR_LIBS == "channel" %}"file:{{ build.root_from_here }}/libraries/capdag-js/{{ projects.capdag_js.version }}/package"{% else %}"^{{ projects.capdag_js.latest_remote_version }}"{% endif %},
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
     "ts-loader": "^9.5.2",

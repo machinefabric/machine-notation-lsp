@@ -1,4 +1,10 @@
 {
+{%- if env.MFR_LIBS == "channel" %}
+  "overrides": {
+    "lungo-ts": "file:{{ build.root_from_here }}/libraries/lungo-ts/{{ projects.lungo_rs.version }}/package",
+    "tagged-urn": "file:{{ build.root_from_here }}/libraries/tagged-urn-js/{{ projects.tagged_urn_js.version }}/package"
+  },
+{%- endif %}
     "name": "machine-notation-lsp-server",
     "private": true,
     "version": "0.1.0",
@@ -8,6 +14,6 @@
         "vscode-uri": "^3.1.0"
     },
     "devDependencies": {
-        "capdag": {% if env.MFR_LOCAL_LIBS %}"file:{{ projects.capdag_js.path_from_here }}"{% else %}"^{{ projects.capdag_js.latest_remote_version }}"{% endif %}
+        "capdag": {% if env.MFR_LIBS == "working" %}"file:{{ projects.capdag_js.path_from_here }}"{% elif env.MFR_LIBS == "channel" %}"file:{{ build.root_from_here }}/libraries/capdag-js/{{ projects.capdag_js.version }}/package"{% else %}"^{{ projects.capdag_js.latest_remote_version }}"{% endif %}
     }
 }
