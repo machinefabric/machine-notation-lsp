@@ -93,8 +93,7 @@ test("TEST13131 registry and git URLs and paths inside the repository pass; an u
 
 // TEST13132: the check reads every lockfile git's index holds for a repository
 // — what a commit records — and not the file on disk: a staged lockfile with a
-// planted link fails it, the clean one passes, and every lockfile this
-// repository holds passes.
+// planted link fails it, and the clean one passes.
 test("TEST13132 the lockfiles git holds for a repository are checked, as staged", (t) => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "lockfile-links-"));
   t.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
@@ -118,7 +117,14 @@ test("TEST13132 the lockfiles git holds for a repository are checked, as staged"
   git("add", "server/package-lock.json");
   fs.writeFileSync(lockPath, planted);
   assert.deepEqual(repositoryProblems(repositoryRoot(scratch)), { files: ["server/package-lock.json"], problems: [] });
+});
 
+// TEST23302: every lockfile git's index holds for THIS repository passes the
+// check. That is a fact about a checkout's commits, so it needs one: a tree
+// that is no git checkout, such as a copy of the tree with no `.git`, fails,
+// naming the folder and what it lacks. How the check reads a staged lockfile
+// is TEST13132's, on a repository of its own, and needs no checkout here.
+test("TEST23302 every lockfile this repository commits passes the check", () => {
   const own = repositoryProblems(repositoryRoot(path.dirname(fileURLToPath(import.meta.url))));
   assert.ok(own.files.length > 0, "this repository commits a lockfile, so the check must have found one");
   assert.deepEqual(own.problems, []);
